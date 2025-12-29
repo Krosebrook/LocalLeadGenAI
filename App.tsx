@@ -55,13 +55,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleGeneratePitch = async (focus: string = 'automation') => {
+  const handleGeneratePitch = async (pitchFocus: string = 'automation') => {
     if (!selectedLead || !audit) return;
     setLoading(prev => ({ ...prev, pitch: true }));
     setPitch(null);
     
     try {
-      const result = await generatePitch(selectedLead, audit, focus, pitchTone, pitchLength);
+      const result = await generatePitch(selectedLead, audit, pitchFocus, pitchTone, pitchLength);
       setPitch(result);
     } catch (err: any) {
       console.error(err);
