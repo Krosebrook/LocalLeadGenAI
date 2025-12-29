@@ -1,0 +1,7 @@
+{
+  "name": "Local Lead Gen Dashboard",
+  "description": "A high-tech dashboard for identifying local business leads, auditing their digital presence, and generating AI-powered sales pitches using Google Maps and Search grounding.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
