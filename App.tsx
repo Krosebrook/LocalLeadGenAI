@@ -3,7 +3,7 @@ import React, { useState, useMemo, Suspense } from 'react';
 import { 
   Search, MapPin, Target, Database, BarChart3, Mail, 
   ExternalLink, Loader2, Sparkles, ChevronRight, RefreshCw, 
-  X, ShieldAlert, Globe, Clock, MessageSquare 
+  X, ShieldAlert, Globe, Clock, MessageSquare, ChevronDown
 } from 'lucide-react';
 import { useLeads } from './hooks/useLeads';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -67,7 +67,8 @@ const Header: React.FC<{
 const App: React.FC = () => {
   const { 
     leads, selectedLead, audit, pitch, loading, error, 
-    setError, setSelectedLead, performSearch, performAudit, createPitch 
+    setError, setSelectedLead, performSearch, performAudit, createPitch,
+    clearSelectedLead, regeneratePitch
   } = useLeads();
 
   const [tone, setTone] = useState('Friendly');
@@ -172,7 +173,7 @@ const App: React.FC = () => {
                     <span className="flex items-center gap-1.5"><BarChart3 size={14} /> {selectedLead.rating} Avg Rating</span>
                   </div>
                 </div>
-                <button onClick={() => setSelectedLead(null)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
+                <button onClick={clearSelectedLead} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
                   Close Detail <X size={14} />
                 </button>
               </div>
@@ -187,6 +188,7 @@ const App: React.FC = () => {
                     <button 
                       onClick={() => performAudit(selectedLead)}
                       disabled={loading.audit}
+                      title="Refresh Audit Data"
                       className="p-2 bg-slate-900 border border-white/5 rounded-xl text-slate-500 hover:text-white transition-all disabled:opacity-20"
                     >
                       <RefreshCw size={14} className={loading.audit ? 'animate-spin' : ''} />
@@ -250,22 +252,36 @@ const App: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 relative z-10">
                         <div>
                           <label className="text-[10px] font-bold uppercase text-slate-600 mb-3 block tracking-widest">Audience Tone</label>
-                          <div className="flex bg-slate-900/80 p-1 rounded-xl border border-white/5">
-                            {['Formal', 'Friendly', 'Urgent'].map(t => (
-                              <button key={t} onClick={() => setTone(t)} className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${tone === t ? 'bg-purple-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
-                                {t}
-                              </button>
-                            ))}
+                          <div className="relative">
+                            <select 
+                              value={tone}
+                              onChange={(e) => setTone(e.target.value)}
+                              className="w-full bg-slate-900/80 border border-white/5 rounded-xl px-4 py-2.5 text-[10px] font-bold text-slate-300 appearance-none outline-none focus:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-900"
+                            >
+                              <option value="Formal">Formal</option>
+                              <option value="Friendly">Friendly</option>
+                              <option value="Urgent">Urgent</option>
+                              <option value="Humorous">Humorous</option>
+                              <option value="Authoritative">Authoritative</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
                           </div>
                         </div>
                         <div>
                           <label className="text-[10px] font-bold uppercase text-slate-600 mb-3 block tracking-widest">Draft length</label>
-                          <div className="flex bg-slate-900/80 p-1 rounded-xl border border-white/5">
-                            {['Short', 'Medium', 'Long'].map(l => (
-                              <button key={l} onClick={() => setLength(l)} className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${length === l ? 'bg-cyan-500 text-slate-950 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
-                                {l}
-                              </button>
-                            ))}
+                          <div className="relative">
+                            <select 
+                              value={length}
+                              onChange={(e) => setLength(e.target.value)}
+                              className="w-full bg-slate-900/80 border border-white/5 rounded-xl px-4 py-2.5 text-[10px] font-bold text-slate-300 appearance-none outline-none focus:border-cyan-500/50 transition-all cursor-pointer hover:bg-slate-900"
+                            >
+                              <option value="Very Short">Very Short</option>
+                              <option value="Short">Short</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Long">Long</option>
+                              <option value="Very Long">Very Long</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
                           </div>
                         </div>
                       </div>
@@ -287,7 +303,7 @@ const App: React.FC = () => {
                             className="w-full bg-cyan-600/20 border border-cyan-500/30 p-4 rounded-2xl font-black text-cyan-200 text-xs flex items-center justify-center gap-3 hover:bg-cyan-600/30 active:scale-95 transition-all disabled:opacity-50"
                           >
                             {loading.pitch ? <Loader2 className="animate-spin" size={16} /> : <Globe size={16} />}
-                            LAUNCHPAD PITCH
+                            WEBSITE LAUNCHPAD PITCH
                           </button>
                         )}
                       </div>
@@ -306,6 +322,14 @@ const App: React.FC = () => {
                               className="bg-white text-slate-950 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
                             >
                               Copy Draft
+                            </button>
+                            <button 
+                              onClick={regeneratePitch}
+                              disabled={loading.pitch}
+                              className="bg-slate-800 border border-white/10 text-slate-300 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-colors flex items-center gap-2"
+                            >
+                              <RefreshCw size={14} className={loading.pitch ? 'animate-spin' : ''} />
+                              Refresh Pitch
                             </button>
                           </div>
                         </div>

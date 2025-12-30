@@ -11,6 +11,7 @@ export function useLeads() {
   const [pitch, setPitch] = useState<string | null>(null);
   const [loading, setLoading] = useState({ leads: false, audit: false, pitch: false });
   const [error, setError] = useState<string | null>(null);
+  const [lastPitchConfig, setLastPitchConfig] = useState<{focus: string, tone: string, length: string} | null>(null);
 
   const performSearch = useCallback(async (search: SearchState) => {
     if (!search.niche || !search.city) return;
@@ -19,6 +20,7 @@ export function useLeads() {
     setSelectedLead(null);
     setAudit(null);
     setPitch(null);
+    setLastPitchConfig(null);
     
     try {
       const results = await findLeads(search.niche, search.city);
@@ -34,6 +36,7 @@ export function useLeads() {
     setSelectedLead(lead);
     setAudit(null);
     setPitch(null);
+    setLastPitchConfig(null);
     setLoading(prev => ({ ...prev, audit: true }));
     setError(null);
     
@@ -51,6 +54,7 @@ export function useLeads() {
     if (!selectedLead || !audit) return;
     setLoading(prev => ({ ...prev, pitch: true }));
     setError(null);
+    setLastPitchConfig({ focus: pitchFocus, tone, length });
     
     try {
       const result = await generatePitch(selectedLead, audit, pitchFocus, tone, length);
@@ -61,6 +65,20 @@ export function useLeads() {
       setLoading(prev => ({ ...prev, pitch: false }));
     }
   }, [selectedLead, audit]);
+
+  const regeneratePitch = useCallback(() => {
+    if (lastPitchConfig) {
+        createPitch(lastPitchConfig.focus, lastPitchConfig.tone, lastPitchConfig.length);
+    }
+  }, [createPitch, lastPitchConfig]);
+
+  const clearSelectedLead = useCallback(() => {
+    setSelectedLead(null);
+    setAudit(null);
+    setPitch(null);
+    setLastPitchConfig(null);
+    setError(null);
+  }, []);
 
   return {
     leads,
@@ -73,6 +91,8 @@ export function useLeads() {
     setSelectedLead,
     performSearch,
     performAudit,
-    createPitch
+    createPitch,
+    regeneratePitch,
+    clearSelectedLead
   };
 }
