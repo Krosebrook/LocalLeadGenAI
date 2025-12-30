@@ -3,56 +3,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeadGen AI Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>LeadGen AI | Digital Sales Accelerator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --cyber-purple: #a855f7;
+            --cyber-blue: #3b82f6;
+            --cyber-pink: #ec4899;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #020617;
             color: #f8fafc;
+            overflow: hidden;
         }
-        .font-mono {
-            font-family: 'JetBrains+Mono', monospace;
-        }
+
         .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .neon-glow {
-            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
-        }
+
         .cyber-gradient {
             background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
         }
-        ::-webkit-scrollbar {
-            width: 6px;
+
+        .neon-border-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+            border-color: rgba(168, 85, 247, 0.4);
         }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 3px;
+
+        .animate-pulse-soft {
+            animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+        "lucide-react": "https://esm.sh/lucide-react@^0.475.0"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="root"></div>
