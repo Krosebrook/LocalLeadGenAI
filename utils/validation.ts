@@ -9,6 +9,8 @@ import { ERROR_MESSAGES } from '../config/constants';
  * @throws Error if required variables are missing
  */
 export const validateEnvironment = (): void => {
+  // Check for API_KEY (legacy) or GEMINI_API_KEY (current standard)
+  // API_KEY is supported for backward compatibility with vite.config.ts
   if (!process.env.API_KEY && !process.env.GEMINI_API_KEY) {
     throw new Error(ERROR_MESSAGES.API_KEY_MISSING);
   }
@@ -32,7 +34,10 @@ export const isValidApiKey = (apiKey: string | undefined): boolean => {
 export const safeJsonParse = <T>(text: string, fallback: T): T => {
   try {
     const jsonMatch = text.match(/\[[\s\S]*\]/) || text.match(/\{[\s\S]*\}/);
-    return JSON.parse(jsonMatch ? jsonMatch[0] : JSON.stringify(fallback));
+    if (!jsonMatch) {
+      return fallback;
+    }
+    return JSON.parse(jsonMatch[0]);
   } catch (error) {
     console.error('JSON parsing failed:', error);
     return fallback;
