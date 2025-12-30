@@ -1,30 +1,33 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { BusinessLead, OpportunityType, BusinessAudit } from "../types";
+import { BusinessLead, BusinessAudit } from "../types";
+import { API_CONFIG } from "../config/constants";
+import { safeJsonParse } from "../utils/validation";
+import { identifyOpportunities, generateLeadId } from "../utils/leadAnalyzer";
 
 export const findLeads = async (niche: string, city: string): Promise<BusinessLead[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite-latest",
-    contents: `Find 12 local businesses for the niche "${niche}" in "${city}". Return the results as a JSON array of objects with the following keys: name, address, rating, reviews, website (if available). Provide only the JSON data.`,
+    model: API_CONFIG.GEMINI_MODELS.FLASH_LITE,
+    contents: `Find ${API_CONFIG.DEFAULT_LEAD_COUNT} local businesses for the niche "${niche}" in "${city}". Return the results as a JSON array of objects with the following keys: name, address, rating, reviews, website (if available). Provide only the JSON data.`,
     config: {
       tools: [{ googleMaps: {} }]
     },
   });
 
   const text = response.text || "[]";
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  const rawData = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+  const rawData = safeJsonParse<any[]>(text, []);
   
   return rawData.map((item: any, index: number) => {
-    const opportunities: OpportunityType[] = [];
-    if (item.rating < 4.0) opportunities.push(OpportunityType.LOW_REPUTATION);
-    if (item.rating > 4.5 && item.reviews < 20) opportunities.push(OpportunityType.UNDERVALUED);
-    if (!item.website) opportunities.push(OpportunityType.MISSING_INFO);
+    const opportunities = identifyOpportunities(
+      item.rating || 0,
+      item.reviews || 0,
+      !!item.website
+    );
 
     return {
-      id: `lead-${index}-${Date.now()}`,
+      id: generateLeadId(index),
       name: item.name,
       address: item.address,
       rating: item.rating || 0,
@@ -48,7 +51,7 @@ export const auditBusiness = async (lead: BusinessLead): Promise<BusinessAudit> 
   Provide a detailed summary and explicitly list missing digital assets (Gaps).`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: API_CONFIG.GEMINI_MODELS.FLASH_PREVIEW,
     contents: prompt,
     config: {
       tools: [{ googleSearch: {} }]
@@ -65,7 +68,7 @@ export const auditBusiness = async (lead: BusinessLead): Promise<BusinessAudit> 
   const gapsPrompt = `Based on this audit text: "${response.text}", list the specific digital gaps or missing features as a short JSON array of strings (e.g., ["No AI Chatbot", "Outdated Website", "No Online Booking"]).`;
   
   const gapsResponse = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: API_CONFIG.GEMINI_MODELS.FLASH_PREVIEW,
     contents: gapsPrompt,
     config: {
       responseMimeType: "application/json",
@@ -77,12 +80,12 @@ export const auditBusiness = async (lead: BusinessLead): Promise<BusinessAudit> 
   });
 
   const gapsText = gapsResponse.text || "[]";
-  const gapsMatch = gapsText.match(/\[[\s\S]*\]/);
+  const gaps = safeJsonParse<string[]>(gapsText, []);
 
   return {
     content: response.text || "No audit data available.",
     sources: sources as { title: string; uri: string }[],
-    gaps: JSON.parse(gapsMatch ? gapsMatch[0] : "[]")
+    gaps
   };
 };
 
@@ -123,7 +126,7 @@ export const generatePitch = async (
   Make it clear you've researched them specifically.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: API_CONFIG.GEMINI_MODELS.FLASH_PREVIEW,
     contents: prompt
   });
 

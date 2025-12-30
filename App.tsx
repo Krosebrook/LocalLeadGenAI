@@ -4,9 +4,10 @@ import { Search, MapPin, Target, Database, BarChart3, Mail, ExternalLink, Loader
 import { findLeads, auditBusiness, generatePitch } from './services/geminiService';
 import { BusinessLead, SearchState, BusinessAudit, OpportunityType } from './types';
 import OpportunityBadge from './components/OpportunityBadge';
+import { UI_CONFIG, ERROR_MESSAGES } from './config/constants';
 
 const App: React.FC = () => {
-  const [search, setSearch] = useState<SearchState>({ niche: 'Dentist', city: 'Austin, TX' });
+  const [search, setSearch] = useState<SearchState>({ niche: UI_CONFIG.DEFAULT_NICHE, city: UI_CONFIG.DEFAULT_CITY });
   const [leads, setLeads] = useState<BusinessLead[]>([]);
   const [selectedLead, setSelectedLead] = useState<BusinessLead | null>(null);
   const [audit, setAudit] = useState<BusinessAudit | null>(null);
@@ -32,7 +33,7 @@ const App: React.FC = () => {
       const results = await findLeads(search.niche, search.city);
       setLeads(results);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch leads');
+      setError(err.message || ERROR_MESSAGES.LEAD_FETCH_FAILED);
     } finally {
       setLoading(prev => ({ ...prev, leads: false }));
     }
@@ -49,7 +50,7 @@ const App: React.FC = () => {
       setAudit(result);
     } catch (err: any) {
       console.error(err);
-      setError('Audit failed. Please try refreshing or selecting another lead.');
+      setError(ERROR_MESSAGES.AUDIT_FAILED);
     } finally {
       setLoading(prev => ({ ...prev, audit: false }));
     }
@@ -65,7 +66,7 @@ const App: React.FC = () => {
       setPitch(result);
     } catch (err: any) {
       console.error(err);
-      setError('Pitch generation failed.');
+      setError(ERROR_MESSAGES.PITCH_GENERATION_FAILED);
     } finally {
       setLoading(prev => ({ ...prev, pitch: false }));
     }
@@ -295,7 +296,7 @@ const App: React.FC = () => {
                             <MessageSquare size={12} /> Target Tone
                           </label>
                           <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5">
-                            {['Formal', 'Friendly', 'Urgent'].map((t) => (
+                            {UI_CONFIG.PITCH_TONES.map((t) => (
                               <button
                                 key={t}
                                 onClick={() => setPitchTone(t)}
@@ -315,7 +316,7 @@ const App: React.FC = () => {
                             <Clock size={12} /> Pitch Length
                           </label>
                           <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5">
-                            {['Short', 'Medium', 'Long'].map((l) => (
+                            {UI_CONFIG.PITCH_LENGTHS.map((l) => (
                               <button
                                 key={l}
                                 onClick={() => setPitchLength(l)}
