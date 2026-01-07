@@ -1,0 +1,18 @@
+
+{
+  "name": "LeadGen AI Dashboard",
+  "short_name": "LeadGenAI",
+  "description": "AI-powered local business lead generation and digital auditing.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#a855f7",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1055/1055644.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
