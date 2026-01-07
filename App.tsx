@@ -52,10 +52,10 @@ const Header: React.FC<{
         </div>
         <button
           onClick={() => onSearch(search)}
-          disabled={loading}
+          disabled={loading.leads}
           className="cyber-gradient px-6 py-2 rounded-xl text-xs font-black text-white flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
         >
-          {loading ? <Loader2 className="animate-spin" size={14} /> : <Database size={14} />}
+          {loading.leads ? <Loader2 className="animate-spin" size={14} /> : <Database size={14} />}
           SCAN AREA
         </button>
       </div>
@@ -67,16 +67,23 @@ const Header: React.FC<{
 const App: React.FC = () => {
   const { 
     leads, selectedLead, audit, pitch, loading, error, 
-    setError, setSelectedLead, performSearch, performAudit, createPitch,
+    setError, performSearch, performAudit, createPitch,
     clearSelectedLead, regeneratePitch
   } = useLeads();
 
-  const [tone, setTone] = useState('Friendly');
-  const [length, setLength] = useState('Medium');
+  // Load saved preferences from localStorage
+  const [tone, setTone] = useLocalStorage<string>('app_pitch_tone', 'Friendly');
+  const [length, setLength] = useLocalStorage<string>('app_pitch_length', 'Medium');
+  const [lastPitchFocus, setLastPitchFocus] = useLocalStorage<string>('app_pitch_focus', 'automation');
 
   const isMissingWebsite = useMemo(() => 
     selectedLead?.opportunities.includes(OpportunityType.MISSING_INFO), 
   [selectedLead]);
+
+  const handleGeneratePitch = (focus: string) => {
+    setLastPitchFocus(focus);
+    createPitch(focus, tone, length);
+  };
 
   return (
     <div className="h-screen flex flex-col">
@@ -181,7 +188,7 @@ const App: React.FC = () => {
               {/* Audit Content */}
               <div className="space-y-12">
                 <section>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3 mb-6">
                     <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                       <Search size={14} className="text-blue-500" /> Grounded Audit
                     </h3>
@@ -189,7 +196,7 @@ const App: React.FC = () => {
                       onClick={() => performAudit(selectedLead)}
                       disabled={loading.audit}
                       title="Refresh Audit Data"
-                      className="p-2 bg-slate-900 border border-white/5 rounded-xl text-slate-500 hover:text-white transition-all disabled:opacity-20"
+                      className="p-1.5 bg-slate-900 border border-white/5 rounded-xl text-slate-500 hover:text-white transition-all disabled:opacity-20"
                     >
                       <RefreshCw size={14} className={loading.audit ? 'animate-spin' : ''} />
                     </button>
@@ -288,22 +295,22 @@ const App: React.FC = () => {
 
                       <div className={`grid grid-cols-1 ${isMissingWebsite ? 'md:grid-cols-2' : ''} gap-4 mb-8`}>
                         <button
-                          onClick={() => createPitch('automation', tone, length)}
+                          onClick={() => handleGeneratePitch('automation')}
                           disabled={loading.pitch}
-                          className="w-full cyber-gradient p-4 rounded-2xl font-black text-white text-xs flex items-center justify-center gap-3 shadow-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                          className={`w-full p-4 rounded-2xl font-black text-white text-xs flex items-center justify-center gap-3 shadow-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 ${lastPitchFocus === 'automation' ? 'cyber-gradient ring-2 ring-purple-500/50' : 'bg-slate-800 border border-white/10'}`}
                         >
-                          {loading.pitch ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                          AI AUTOMATION PITCH
+                          {loading.pitch && lastPitchFocus === 'automation' ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                          AI Automation Pitch
                         </button>
 
                         {isMissingWebsite && (
                           <button
-                            onClick={() => createPitch('website', tone, length)}
+                            onClick={() => handleGeneratePitch('website')}
                             disabled={loading.pitch}
-                            className="w-full bg-cyan-600/20 border border-cyan-500/30 p-4 rounded-2xl font-black text-cyan-200 text-xs flex items-center justify-center gap-3 hover:bg-cyan-600/30 active:scale-95 transition-all disabled:opacity-50"
+                            className={`w-full p-4 rounded-2xl font-black text-xs flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50 ${lastPitchFocus === 'website' ? 'bg-cyan-600 border-2 border-cyan-400 text-white shadow-cyan-500/20' : 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-200 hover:bg-cyan-600/30'}`}
                           >
-                            {loading.pitch ? <Loader2 className="animate-spin" size={16} /> : <Globe size={16} />}
-                            WEBSITE LAUNCHPAD PITCH
+                            {loading.pitch && lastPitchFocus === 'website' ? <Loader2 className="animate-spin" size={16} /> : <Globe size={16} />}
+                            Website Launchpad Pitch
                           </button>
                         )}
                       </div>
