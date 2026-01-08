@@ -9,7 +9,6 @@ import { useLeads } from './hooks/useLeads';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { OpportunityType, BusinessLead, SearchState } from './types';
 import OpportunityBadge from './components/OpportunityBadge';
-import { UI_CONFIG, ERROR_MESSAGES } from './config/constants';
 
 // Header Component
 const Header: React.FC<{
