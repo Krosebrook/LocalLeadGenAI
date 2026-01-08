@@ -3,7 +3,8 @@ import React, { useState, useMemo, Suspense } from 'react';
 import { 
   Search, MapPin, Target, Database, BarChart3, Mail, 
   ExternalLink, Loader2, Sparkles, ChevronRight, RefreshCw, 
-  X, ShieldAlert, Globe, Clock, MessageSquare, ChevronDown
+  X, ShieldAlert, Globe, Clock, MessageSquare, ChevronDown,
+  Bookmark, BookmarkCheck, Trash2, ShieldX, Info
 } from 'lucide-react';
 import { useLeads } from './hooks/useLeads';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -52,10 +53,10 @@ const Header: React.FC<{
         </div>
         <button
           onClick={() => onSearch(search)}
-          disabled={loading.leads}
+          disabled={loading}
           className="cyber-gradient px-6 py-2 rounded-xl text-xs font-black text-white flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
         >
-          {loading.leads ? <Loader2 className="animate-spin" size={14} /> : <Database size={14} />}
+          {loading ? <Loader2 className="animate-spin" size={14} /> : <Database size={14} />}
           SCAN AREA
         </button>
       </div>
@@ -71,6 +72,10 @@ const App: React.FC = () => {
     clearSelectedLead, regeneratePitch
   } = useLeads();
 
+  // Saved leads state
+  const [savedLeads, setSavedLeads] = useLocalStorage<BusinessLead[]>('app_saved_leads', []);
+  const [sidebarTab, setSidebarTab] = useState<'live' | 'saved'>('live');
+
   // Load saved preferences from localStorage
   const [tone, setTone] = useLocalStorage<string>('app_pitch_tone', 'Friendly');
   const [length, setLength] = useLocalStorage<string>('app_pitch_length', 'Medium');
@@ -80,10 +85,25 @@ const App: React.FC = () => {
     selectedLead?.opportunities.includes(OpportunityType.MISSING_INFO), 
   [selectedLead]);
 
+  const isLeadSaved = useMemo(() => 
+    savedLeads.some(l => l.id === selectedLead?.id),
+  [savedLeads, selectedLead]);
+
   const handleGeneratePitch = (focus: string) => {
     setLastPitchFocus(focus);
     createPitch(focus, tone, length);
   };
+
+  const toggleSaveLead = () => {
+    if (!selectedLead) return;
+    if (isLeadSaved) {
+      setSavedLeads(savedLeads.filter(l => l.id !== selectedLead.id));
+    } else {
+      setSavedLeads([...savedLeads, selectedLead]);
+    }
+  };
+
+  const displayedLeads = sidebarTab === 'live' ? leads : savedLeads;
 
   return (
     <div className="h-screen flex flex-col">
@@ -92,13 +112,27 @@ const App: React.FC = () => {
       <main className="flex-1 flex overflow-hidden">
         {/* Left Panel: Leads */}
         <aside className="w-full lg:w-[400px] border-r border-white/5 bg-slate-950/20 overflow-y-auto flex flex-col">
-          <div className="p-4 flex items-center justify-between border-b border-white/5 sticky top-0 bg-slate-950/80 backdrop-blur z-10">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
-              <BarChart3 size={12} /> Live Prospects
-            </h2>
-            <span className="text-[10px] bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20">
-              {leads.length} Active
-            </span>
+          <div className="p-4 space-y-4 border-b border-white/5 sticky top-0 bg-slate-950/80 backdrop-blur z-10">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                <BarChart3 size={12} /> Prospect Pipeline
+              </h2>
+            </div>
+            
+            <div className="flex p-1 bg-slate-900/50 rounded-xl border border-white/5">
+              <button 
+                onClick={() => setSidebarTab('live')}
+                className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-[10px] font-bold rounded-lg transition-all ${sidebarTab === 'live' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                <Database size={12} /> LIVE ({leads.length})
+              </button>
+              <button 
+                onClick={() => setSidebarTab('saved')}
+                className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-[10px] font-bold rounded-lg transition-all ${sidebarTab === 'saved' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                <Bookmark size={12} /> SAVED ({savedLeads.length})
+              </button>
+            </div>
           </div>
 
           <div className="p-4 space-y-3">
@@ -106,16 +140,20 @@ const App: React.FC = () => {
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-24 bg-slate-900/50 rounded-2xl animate-pulse-soft border border-white/5" />
               ))
-            ) : leads.length === 0 ? (
+            ) : displayedLeads.length === 0 ? (
               <div className="py-20 text-center px-6">
                 <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
                   <Target size={24} className="text-slate-700" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-400">No leads targeted yet</h3>
-                <p className="text-xs text-slate-600 mt-1">Search for a niche and location to populate your pipeline.</p>
+                <h3 className="text-sm font-bold text-slate-400">
+                  {sidebarTab === 'live' ? 'No leads targeted yet' : 'No saved leads yet'}
+                </h3>
+                <p className="text-xs text-slate-600 mt-1">
+                  {sidebarTab === 'live' ? 'Search for a niche and location to populate your pipeline.' : 'Save prospects to your library to access them anytime.'}
+                </p>
               </div>
             ) : (
-              leads.map((lead) => (
+              displayedLeads.map((lead) => (
                 <div
                   key={lead.id}
                   onClick={() => performAudit(lead)}
@@ -180,9 +218,18 @@ const App: React.FC = () => {
                     <span className="flex items-center gap-1.5"><BarChart3 size={14} /> {selectedLead.rating} Avg Rating</span>
                   </div>
                 </div>
-                <button onClick={clearSelectedLead} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
-                  Close Detail <X size={14} />
-                </button>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={toggleSaveLead}
+                    className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border transition-all ${isLeadSaved ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' : 'bg-slate-900 border-white/5 text-slate-500 hover:text-white'}`}
+                  >
+                    {isLeadSaved ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                    {isLeadSaved ? 'Saved' : 'Save Lead'}
+                  </button>
+                  <button onClick={clearSelectedLead} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
+                    Close Detail <X size={14} />
+                  </button>
+                </div>
               </div>
 
               {/* Audit Content */}
@@ -211,33 +258,41 @@ const App: React.FC = () => {
                       <p className="text-xs font-bold text-slate-500 animate-pulse tracking-widest uppercase">Analyzing Digital Footprint...</p>
                     </div>
                   ) : audit ? (
-                    <div className="space-y-6 animate-in fade-in duration-500">
+                    <div className="space-y-8 animate-in fade-in duration-500">
                       <div className="glass-panel p-6 rounded-3xl text-sm leading-relaxed text-slate-300">
                         {audit.content.split('\n').map((line, i) => (
                           <p key={i} className="mb-2">{line}</p>
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="glass-panel p-5 rounded-3xl border-red-500/10 bg-red-500/[0.02]">
-                          <h4 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-4">Critical Gaps Found</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {audit.gaps.map((gap, i) => (
-                              <span key={i} className="px-2.5 py-1 bg-red-500/10 text-red-300 border border-red-500/20 rounded-lg text-[10px] font-bold">
-                                {gap}
-                              </span>
-                            ))}
-                          </div>
+                      {/* Prominent Critical Gaps Section */}
+                      <div className="glass-panel p-6 rounded-3xl border-rose-500/20 bg-rose-500/[0.03] shadow-[0_0_40px_rgba(244,63,94,0.03)] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none rotate-12">
+                           <ShieldX size={80} className="text-rose-500" />
                         </div>
-                        <div className="glass-panel p-5 rounded-3xl bg-blue-500/[0.02]">
-                          <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Verification Sources</h4>
-                          <div className="space-y-2">
-                            {audit.sources.map((s, i) => (
-                              <a key={i} href={s.uri} target="_blank" rel="noreferrer" className="block text-[10px] text-slate-500 hover:text-blue-400 transition-colors truncate">
-                                [{i+1}] {s.title}
-                              </a>
-                            ))}
-                          </div>
+                        <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                          <ShieldAlert size={14} /> Critical Gap Analysis
+                        </h4>
+                        <div className="flex flex-wrap gap-2 relative z-10">
+                          {audit.gaps.length > 0 ? (
+                            audit.gaps.map((gap, i) => (
+                              <OpportunityBadge key={i} type={gap} />
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-500 italic">No critical gaps identified in current audit cycle.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="glass-panel p-6 rounded-3xl bg-blue-500/[0.02]">
+                        <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Verification Sources</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {audit.sources.map((s, i) => (
+                            <a key={i} href={s.uri} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-white/[0.02] border border-white/5 rounded-lg text-[10px] text-slate-400 hover:text-blue-400 hover:bg-blue-500/5 transition-all truncate">
+                              <ExternalLink size={10} className="shrink-0" />
+                              <span className="truncate">{s.title}</span>
+                            </a>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -294,24 +349,44 @@ const App: React.FC = () => {
                       </div>
 
                       <div className={`grid grid-cols-1 ${isMissingWebsite ? 'md:grid-cols-2' : ''} gap-4 mb-8`}>
-                        <button
-                          onClick={() => handleGeneratePitch('automation')}
-                          disabled={loading.pitch}
-                          className={`w-full p-4 rounded-2xl font-black text-white text-xs flex items-center justify-center gap-3 shadow-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 ${lastPitchFocus === 'automation' ? 'cyber-gradient ring-2 ring-purple-500/50' : 'bg-slate-800 border border-white/10'}`}
-                        >
-                          {loading.pitch && lastPitchFocus === 'automation' ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                          AI Automation Pitch
-                        </button>
+                        <div className="relative group/tooltip">
+                          <button
+                            onClick={() => handleGeneratePitch('automation')}
+                            disabled={loading.pitch}
+                            className={`w-full p-4 rounded-2xl font-black text-white text-xs flex items-center justify-center gap-3 shadow-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 ${lastPitchFocus === 'automation' ? 'cyber-gradient ring-2 ring-purple-500/50' : 'bg-slate-800 border border-white/10'}`}
+                          >
+                            {loading.pitch && lastPitchFocus === 'automation' ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                            AI Automation Pitch
+                          </button>
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-slate-900/95 border border-white/10 rounded-xl text-[10px] font-bold text-slate-300 w-56 text-center opacity-0 group-hover/tooltip:opacity-100 group-hover/tooltip:translate-y-0 translate-y-2 pointer-events-none transition-all z-50 shadow-2xl backdrop-blur-md">
+                            <div className="flex items-center gap-2 mb-1 justify-center text-purple-400">
+                              <Sparkles size={10} />
+                              <span className="tracking-[0.2em] uppercase">Efficiency focus</span>
+                            </div>
+                            Generate a pitch centered on AI chatbots, automated booking, and modern workflow optimization.
+                          </div>
+                        </div>
 
                         {isMissingWebsite && (
-                          <button
-                            onClick={() => handleGeneratePitch('website')}
-                            disabled={loading.pitch}
-                            className={`w-full p-4 rounded-2xl font-black text-xs flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50 ${lastPitchFocus === 'website' ? 'bg-cyan-600 border-2 border-cyan-400 text-white shadow-cyan-500/20' : 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-200 hover:bg-cyan-600/30'}`}
-                          >
-                            {loading.pitch && lastPitchFocus === 'website' ? <Loader2 className="animate-spin" size={16} /> : <Globe size={16} />}
-                            Website Launchpad Pitch
-                          </button>
+                          <div className="relative group/tooltip">
+                            <button
+                              onClick={() => handleGeneratePitch('website')}
+                              disabled={loading.pitch}
+                              className={`w-full p-4 rounded-2xl font-black text-xs flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50 ${lastPitchFocus === 'website' ? 'bg-cyan-600 border-2 border-cyan-400 text-white shadow-cyan-500/20' : 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-200 hover:bg-cyan-600/30'}`}
+                            >
+                              {loading.pitch && lastPitchFocus === 'website' ? <Loader2 className="animate-spin" size={16} /> : <Globe size={16} />}
+                              Website Launchpad Pitch
+                            </button>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-slate-900/95 border border-white/10 rounded-xl text-[10px] font-bold text-slate-300 w-56 text-center opacity-0 group-hover/tooltip:opacity-100 group-hover/tooltip:translate-y-0 translate-y-2 pointer-events-none transition-all z-50 shadow-2xl backdrop-blur-md">
+                              <div className="flex items-center gap-2 mb-1 justify-center text-cyan-400">
+                                <Globe size={10} />
+                                <span className="tracking-[0.2em] uppercase">Authority focus</span>
+                              </div>
+                              Focused on establishing digital presence, search visibility, and professional credibility for businesses without a site.
+                            </div>
+                          </div>
                         )}
                       </div>
 

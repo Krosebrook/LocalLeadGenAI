@@ -38,18 +38,30 @@ export const findLeads = async (niche: string, city: string): Promise<BusinessLe
 export const auditBusiness = async (lead: BusinessLead): Promise<BusinessAudit> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Conduct a digital presence audit for "${lead.name}" located at "${lead.address}". 
-  Search for their official website, social media (Facebook, Instagram, LinkedIn), and check for:
-  1. Does the website have an online booking/scheduling system?
-  2. Is there an AI chatbot visible?
-  3. What is the copyright year in the footer?
-  4. Are they active on social media?
-  
-  Provide a detailed summary and explicitly list missing digital assets (Gaps).`;
+  const auditPrompt = `Conduct a comprehensive digital presence and performance audit for "${lead.name}" located at "${lead.address}". 
+  Use Google Search to investigate their digital footprint across the following areas:
+
+  1. WEBSITE & PERFORMANCE:
+     - Check for mobile responsiveness and SSL security.
+     - Evaluate perceived page load speed (is it fast, average, or slow?).
+     - Look for conversion elements: online booking systems, AI chatbots, or contact forms.
+     - Check footer copyright year to gauge update frequency.
+
+  2. SOCIAL MEDIA ENGAGEMENT:
+     - Locate official profiles (Facebook, Instagram, LinkedIn, TikTok).
+     - Activity Check: Have they posted in the last 30 days?
+     - Follower Range: Estimate their reach (e.g., <100, 100-1k, 1k-10k, 10k+).
+     - Engagement: Do they seem to respond to customer comments or reviews?
+
+  3. SEO & BRAND SEARCH:
+     - How well do they appear in search results?
+     - Is their meta description professional?
+
+  Provide a detailed summary of your findings and explicitly highlight missing digital assets or performance bottlenecks.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: prompt,
+    contents: auditPrompt,
     config: {
       tools: [{ googleSearch: {} }]
     }
@@ -62,7 +74,8 @@ export const auditBusiness = async (lead: BusinessLead): Promise<BusinessAudit> 
       uri: chunk.web?.uri || '#'
     })) || [];
 
-  const gapsPrompt = `Based on this audit text: "${response.text}", list the specific digital gaps or missing features as a short JSON array of strings (e.g., ["No AI Chatbot", "Outdated Website", "No Online Booking"]).`;
+  const gapsPrompt = `Based on this audit analysis: "${response.text}", extract and list the specific digital gaps, missing features, or performance issues as a short JSON array of strings. 
+  Focus on identifying high-value selling points like "No Recent Social Posts", "Slow Website Loading", "No Mobile Optimization", "Missing AI Chatbot", "Low Social Engagement", or "Outdated Copyright".`;
   
   const gapsResponse = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
